@@ -1,0 +1,67 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+.devcontainer
+
+/.vscode/*
+# 首先排除build所有文件
+/build/*
+# 第一步将bootloader文件夹取消忽略
+!/build/bootloader/
+# 第二步忽略bootloader文件夹下所有文件
+# !!!注意忽略文件夹和忽略文件夹下所有文件是不同的概念
+/build/bootloader/*
+# 第三步取消不想忽略的文件 (如果前面忽略了整个文件夹 这里就会直接搜不到文件)
+!/build/bootloader/bootloader.bin
+
+!/build/partition_table/
