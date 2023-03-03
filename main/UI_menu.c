@@ -2,7 +2,7 @@
  * @Author       : zakiuc
  * @Date         : 2023-02-23 13:55:54
  * @LastEditors  : zakiuc z2337070680@163.com
- * @LastEditTime : 2023-03-02 13:35:07
+ * @LastEditTime : 2023-03-02 17:07:14
  * @FilePath     : \main\UI_menu.c
  * @Description  : menu ui
  * Copyright (c) 2023 by zakiuc z2337070680@163.com, All Rights Reserved. 
@@ -21,6 +21,10 @@ static lv_style_t style_menu_default;
 static lv_style_t style_tabbar_default;
 // 导航条indicator默认样式
 static lv_style_t style_tabbar_indicator_default;
+// 移除菜单动画
+static void menu_move_out(lv_ui_t* ui);
+// 返回菜单动画
+static void menu_move_back(lv_ui_t* ui);
 
 // 菜单属性表
 MenuAttr_t menu_attr_table[] = {
@@ -234,6 +238,30 @@ void init_menu_obj(lv_ui_t *ui, Menu_t mode)
 }
 
 
+void OpenMenu(lv_ui_t* ui)
+{
+    if(ui->level == 0)
+    {
+        // 移除的动画
+        ui->level++;
+        menu_move_out(ui);
+        // 菜单内容
+    }
+}
+
+
+void BackMenu(lv_ui_t* ui)
+{
+    if(ui->level == 1)
+    {
+        // 移除的动画
+        ui->level--;
+        menu_move_back(ui);
+        // 菜单内容
+    }
+}
+
+
 /**
  * @brief    添加动画并立刻执行
  * @param    (lv_obj_t*) obj : 目标元素
@@ -278,6 +306,18 @@ void lv_obj_set_x_anim(lv_obj_t* obj, lv_coord_t x)
 
 
 /**
+ * @brief    设置obj y轴位置
+ * @param    (lv_obj_t*) obj : 元素
+ * @param    (lv_coord_t) y : y轴位置
+ * @return   (void)
+ */
+void lv_obj_set_y_anim(lv_obj_t* obj, lv_coord_t y)
+{
+    lv_obj_set_pos(obj, lv_obj_get_x(obj), y);
+}
+
+
+/**
  * @brief    导航条移动动画效果结束的回调函数
  * @param    (void) *obj : 待操作元素
  * @param    (s32) v : (x轴)起始位置
@@ -311,6 +351,89 @@ void tabbar_sync(lv_ui_t* ui, u8 now, u8 target)
 
 
 /**
+ * @brief    打开菜单项的进入动画
+ * @param    (lv_ui_t*) ui : ui对象
+ * @return   (void)
+ */
+static void menu_move_out(lv_ui_t* ui)
+{
+    s16 target_pos_buff[] = {-101, 273}; 
+    lv_obj_t* act_scr = lv_scr_act();
+    lv_disp_t* d = lv_obj_get_disp(act_scr);
+    if (d->prev_scr == NULL && (d->scr_to_load == NULL || d->scr_to_load == act_scr))
+    {
+        Menu_t node = ListFind(ui->menu_head, ui->index);
+        
+        lv_obj_refr_pos(node->menu_obj.mode_icon.image);
+        lv_obj_refr_pos(node->menu_obj.mode_label.label);
+
+        // 导航栏
+        lv_obj_add_flag(ui->tabbar, LV_OBJ_FLAG_HIDDEN);
+
+        // 图标移动
+        obj_add_anim(
+            node->menu_obj.mode_icon.image,
+            (lv_anim_exec_xcb_t)lv_obj_set_y_anim,
+            MENU_OUT_TIME,
+            MODE_ICON_DEFAULT_POS_Y,
+            target_pos_buff[0],
+            lv_anim_path_ease_out
+        );
+
+        // 标签移动
+        obj_add_anim(
+            node->menu_obj.mode_label.label,
+            (lv_anim_exec_xcb_t)lv_obj_set_y_anim,
+            MENU_MOVE_TIME,
+            MODE_LABEL_DEFAULT_POS_Y,
+            target_pos_buff[1],
+            lv_anim_path_ease_out
+        );
+        ESP_LOGI(ESP_TAG, "Menu open.");
+    }
+}
+
+
+static void menu_move_back(lv_ui_t* ui)
+{
+    s16 target_pos_buff[] = {-101, 273}; 
+    lv_obj_t* act_scr = lv_scr_act();
+    lv_disp_t* d = lv_obj_get_disp(act_scr);
+    if (d->prev_scr == NULL && (d->scr_to_load == NULL || d->scr_to_load == act_scr))
+    {
+        Menu_t node = ListFind(ui->menu_head, ui->index);
+        
+        lv_obj_refr_pos(node->menu_obj.mode_icon.image);
+        lv_obj_refr_pos(node->menu_obj.mode_label.label);
+
+        // 图标移动
+        obj_add_anim(
+            node->menu_obj.mode_icon.image,
+            (lv_anim_exec_xcb_t)lv_obj_set_y_anim,
+            MENU_OUT_TIME,
+            target_pos_buff[0],
+            MODE_ICON_DEFAULT_POS_Y,
+            lv_anim_path_ease_out
+        );
+
+        // 标签移动
+        obj_add_anim(
+            node->menu_obj.mode_label.label,
+            (lv_anim_exec_xcb_t)lv_obj_set_y_anim,
+            MENU_MOVE_TIME,
+            target_pos_buff[1],
+            MODE_LABEL_DEFAULT_POS_Y,
+            lv_anim_path_ease_out
+        );
+
+        // 导航栏
+        lv_obj_clear_flag(ui->tabbar, LV_OBJ_FLAG_HIDDEN);
+        ESP_LOGI(ESP_TAG, "Menu back.");
+    }
+}
+
+
+/**
  * @brief    移动菜单(单步)
  * @param    (lv_ui_t*) ui : ui对象
  * @param    (u8) direction : 方向  MENU_MOVE_ON(右) MENU_MOVE_BACK(左)
@@ -321,9 +444,9 @@ u8 menu_move_step(lv_ui_t* ui, u8 direction)
     s16 target_pos_buff[] = {240+1, -101, 240+1, -201}; 
     lv_obj_t* act_scr = lv_scr_act();
     lv_disp_t* d = lv_obj_get_disp(act_scr);
-    if (d->prev_scr == NULL && (d->scr_to_load == NULL || d->scr_to_load == act_scr))
+    if (d->prev_scr == NULL && (d->scr_to_load == NULL || d->scr_to_load == act_scr) && (ui->level == 0))
     {
-        Menu_t node = ListFind(ui->menu_list, ui->index);
+        Menu_t node = ListFind(ui->menu_head, ui->index);
         
         MenuAttr_t next_obj;
         if (direction == MENU_MOVE_ON)
@@ -348,7 +471,7 @@ u8 menu_move_step(lv_ui_t* ui, u8 direction)
             node->menu_obj.mode_icon.image,
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
-            MODE_ICON_DEFAULT_POS,
+            MODE_ICON_DEFAULT_POS_X,
             0 + target_pos_buff[direction],
             lv_anim_path_ease_out
         );
@@ -357,7 +480,7 @@ u8 menu_move_step(lv_ui_t* ui, u8 direction)
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
             0 + target_pos_buff[direction == 1 ? 0 : 1],
-            MODE_ICON_DEFAULT_POS,
+            MODE_ICON_DEFAULT_POS_X,
             lv_anim_path_bounce
         );
 
@@ -366,7 +489,7 @@ u8 menu_move_step(lv_ui_t* ui, u8 direction)
             node->menu_obj.mode_label.label,
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
-            MODE_LABEL_DEFAULT_POS,
+            MODE_LABEL_DEFAULT_POS_X,
             0 + target_pos_buff[direction+2],
             lv_anim_path_ease_out
         );
@@ -375,7 +498,7 @@ u8 menu_move_step(lv_ui_t* ui, u8 direction)
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
             0 + target_pos_buff[(direction == 1 ? 0 : 1) + 2],
-            MODE_LABEL_DEFAULT_POS,
+            MODE_LABEL_DEFAULT_POS_X,
             lv_anim_path_bounce
         );
 
@@ -383,21 +506,31 @@ u8 menu_move_step(lv_ui_t* ui, u8 direction)
         tabbar_sync(ui, node->menu_obj.menu_id, next_obj.menu_id);
         ESP_LOGI(ESP_TAG, "Menu moved.");
         ui->index = next_obj.menu_id;
+        ui->menu_node = ListFind(ui->menu_head, ui->index);
         return next_obj.menu_id;
     }
     return 25;
 }
 
 
+/**
+ * @brief    移动菜单
+ * @param    (lv_ui_t*) ui : ui 对象
+ * @param    (u8) target : 目标菜单索引
+ * @return   (u8) 当前菜单索引
+ */
 u8 menu_move(lv_ui_t* ui, u8 target)
 {
+    if(ui->index == target){
+        return 25;
+    }
     s16 target_pos_buff[] = {240+1, -101, 240+1, -201}; 
     lv_obj_t* act_scr = lv_scr_act();
     lv_disp_t* d = lv_obj_get_disp(act_scr);
-    if (d->prev_scr == NULL && (d->scr_to_load == NULL || d->scr_to_load == act_scr))
+    if (d->prev_scr == NULL && (d->scr_to_load == NULL || d->scr_to_load == act_scr) && (ui->level == 0))
     {
-        Menu_t node = ListFind(ui->menu_list, ui->index);
-        Menu_t target_node = ListFind(ui->menu_list, target);
+        Menu_t node = ListFind(ui->menu_head, ui->index);
+        Menu_t target_node = ListFind(ui->menu_head, target);
         MenuAttr_t next_obj;
         u8 direction;
         if(FindShortcut(node, target_node)){
@@ -416,7 +549,7 @@ u8 menu_move(lv_ui_t* ui, u8 target)
             node->menu_obj.mode_icon.image,
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
-            MODE_ICON_DEFAULT_POS,
+            MODE_ICON_DEFAULT_POS_X,
             0 + target_pos_buff[direction],
             lv_anim_path_ease_out
         );
@@ -425,7 +558,7 @@ u8 menu_move(lv_ui_t* ui, u8 target)
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
             0 + target_pos_buff[direction == 1 ? 0 : 1],
-            MODE_ICON_DEFAULT_POS,
+            MODE_ICON_DEFAULT_POS_X,
             lv_anim_path_bounce
         );
 
@@ -434,7 +567,7 @@ u8 menu_move(lv_ui_t* ui, u8 target)
             node->menu_obj.mode_label.label,
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
-            MODE_LABEL_DEFAULT_POS,
+            MODE_LABEL_DEFAULT_POS_X,
             0 + target_pos_buff[direction+2],
             lv_anim_path_ease_out
         );
@@ -443,7 +576,7 @@ u8 menu_move(lv_ui_t* ui, u8 target)
             (lv_anim_exec_xcb_t)lv_obj_set_x_anim,
             MENU_MOVE_TIME,
             0 + target_pos_buff[(direction == 1 ? 0 : 1) + 2],
-            MODE_LABEL_DEFAULT_POS,
+            MODE_LABEL_DEFAULT_POS_X,
             lv_anim_path_bounce
         );
 
@@ -451,6 +584,7 @@ u8 menu_move(lv_ui_t* ui, u8 target)
         tabbar_sync(ui, node->menu_obj.menu_id, next_obj.menu_id);
         ESP_LOGI(ESP_TAG, "Menu moved.");
         ui->index = next_obj.menu_id;
+        ui->menu_node = ListFind(ui->menu_head, ui->index);
         return next_obj.menu_id;
     }
     return 25;
@@ -468,8 +602,10 @@ void init_menu_ui(lv_ui_t* ui)
     Menu_t deep_node = ListPushEnd(daily_node, menu_attr_table[1]);
     Menu_t more_node = ListPushEnd(daily_node, menu_attr_table[2]);
 
-    ui->menu_list = daily_node;
+    ui->menu_head = daily_node;
     ui->index = daily_node->menu_obj.menu_id;
+    ui->menu_node = ListFind(ui->menu_head, ui->index);
+    ui->level = 0;
     // 初始化样式
     init_style();
     // 新建屏幕

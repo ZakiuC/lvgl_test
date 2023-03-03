@@ -2,7 +2,7 @@
  * @Author       : zakiuc
  * @Date         : 2023-02-22 09:18:21
  * @LastEditors  : zakiuc z2337070680@163.com
- * @LastEditTime : 2023-03-02 13:40:22
+ * @LastEditTime : 2023-03-02 16:48:45
  * @FilePath     : \main\menu_list.h
  * @Description  : 
  * Copyright (c) 2023 by zakiuc z2337070680@163.com, All Rights Reserved. 
@@ -12,6 +12,10 @@
 #define _MENU_LIST_H_
 #include "lvgl.h"
 #include "user_config.h"
+
+
+
+
 
 /* 坐标数据 */
 typedef struct
@@ -86,6 +90,7 @@ typedef struct menu {
     struct menu* previous;
     struct menu* next;
 }LinkList, *Menu_t;
+
 
 
 // 动态申请一个结点

@@ -2,7 +2,7 @@
  * @Author       : zakiuc
  * @Date         : 2023-02-21 19:27:38
  * @LastEditors  : zakiuc z2337070680@163.com
- * @LastEditTime : 2023-03-02 13:19:03
+ * @LastEditTime : 2023-03-02 17:01:13
  * @FilePath     : \main\test.c
  * @Description  :
  * Copyright (c) 2023 by zakiuc z2337070680@163.com, All Rights Reserved.
@@ -60,13 +60,18 @@ void key_cb(u8 index, u8 cmd)
         {
             case CLICK:
                 ESP_LOGI("TT", "单击");
+                OpenMenu(&ui);
                 break;
             case PRESSED:
                 ESP_LOGI("TT", "长按");
+                BackMenu(&ui);
                 break;
             case DOUBLECLICKED:
                 ESP_LOGI("TT", "双击");
-                menu_move(&ui, 2);
+                if(menu_move(&ui, 2) == 25)
+                {
+                    ESP_LOGE("寄", "寄了");
+                }
                 break;
         }
     }
